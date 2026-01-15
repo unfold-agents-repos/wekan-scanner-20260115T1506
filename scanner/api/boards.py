@@ -60,7 +60,7 @@ async def get_public_boards(client: 'WekanClient') -> list[Board]:
     """
     Get all public boards.
     """
-    return [Board.parse_obj(board_data) for board_data in (await client.get('api/boards')).json]
+    return (await client.get('api/boards')).as_list(Board)
 
 @action()
 async def new_board(
@@ -110,7 +110,7 @@ async def get_board_attachments(client: 'WekanClient', *, board_id: str) -> list
 
     :param board_id: The ID of the board.
     """
-    return [BoardAttachment.parse_obj(attachment_data) for attachment_data in (await client.get(f'api/boards/{board_id}/attachments')).json]
+    return (await client.get(f'api/boards/{board_id}/attachments')).as_list(BoardAttachment)
 
 @action()
 async def export_board_json(client: 'WekanClient', *, board_id: str) -> dict[str, Any]:
@@ -206,7 +206,7 @@ async def get_boards_from_user(client: 'WekanClient', *, user_id: str) -> list[B
 
     :param user_id: The ID of the user.
     """
-    return [Board.parse_obj(board_data) for board_data in (await client.get(f'api/users/{user_id}/boards')).json]
+    return (await client.get(f'api/users/{user_id}/boards')).as_list(Board)
 
 
 @all_action
@@ -227,27 +227,26 @@ async def all(client: 'WekanClient') -> int:
         boards = await get_public_boards(client)
         logfire.info(f'✓ Listed {len(boards)} public boards')
 
-        logfire.warn("Skipping new_board and dependent tests due to consistent 500 Internal Server Error.")
-        # # Test new_board
-        # created_board = await new_board(client, title='Test Board (cleanup)')
-        # logfire.info(f'✓ Created board: {created_board.id} with title "{created_board.title}"')
+        # Test new_board
+        created_board = await new_board(client, title='Test Board (cleanup)')
+        logfire.info(f'✓ Created board: {created_board.id} with title "{created_board.title}"')
 
-        # # Test get_board
-        # board = await get_board(client, board_id=created_board.id)
-        # logfire.info(f'✓ Got board: {board.title}')
+        # Test get_board
+        board = await get_board(client, board_id=created_board.id)
+        logfire.info(f'✓ Got board: {board.title}')
 
-        # # Test copy_board
-        # copied_board = await copy_board(client, board_id=created_board.id, title='Copied Test Board (cleanup)')
-        # logfire.info(f'✓ Copied board: {copied_board.id} with title "{copied_board.title}"')
+        # Test copy_board
+        copied_board = await copy_board(client, board_id=created_board.id, title='Copied Test Board (cleanup)')
+        logfire.info(f'✓ Copied board: {copied_board.id} with title "{copied_board.title}"')
 
-        # # Test update_board_title
-        # await update_board_title(client, board_id=created_board.id, title='Updated Test Board (cleanup)')
-        # updated_board = await get_board(client, board_id=created_board.id)
-        # logfire.info(f'✓ Updated board title to: "{updated_board.title}"')
+        # Test update_board_title
+        await update_board_title(client, board_id=created_board.id, title='Updated Test Board (cleanup)')
+        updated_board = await get_board(client, board_id=created_board.id)
+        logfire.info(f'✓ Updated board title to: "{updated_board.title}"')
 
-        # # Test add_board_label
-        # label = await add_board_label(client, board_id=created_board.id, name='Test Label', color='green')
-        # logfire.info(f'✓ Added label: {label.name} with color {label.color}')
+        # Test add_board_label
+        label = await add_board_label(client, board_id=created_board.id, name='Test Label', color='green')
+        logfire.info(f'✓ Added label: {label.name} with color {label.color}')
 
         # Test get_boards_count
         boards_count = await get_boards_count(client)

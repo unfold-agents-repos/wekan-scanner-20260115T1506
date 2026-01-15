@@ -158,10 +158,12 @@ class WekanClient:
             "Accept": "application/json",
         }
 
-        if self.config.auth_token and self.config.user_id:
-            headers["X-Auth-Token"] = self.config.auth_token
-            headers["X-User-Id"] = self.config.user_id
-            logfire.debug("DEBUG: Sending X-Auth-Token and X-User-Id headers.")
+        if self.config.auth_token:
+            headers["x-wekan-token"] = self.config.auth_token
+            logfire.debug("DEBUG: Sending x-wekan-token header.")
+        if self.config.user_id:
+            headers["x-wekan-user-id"] = self.config.user_id
+            logfire.debug("DEBUG: Sending x-wekan-user-id header.")
 
         return httpx.AsyncClient(
             base_url=self.config.base_url,

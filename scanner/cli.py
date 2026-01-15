@@ -279,7 +279,22 @@ def main() -> int:
     try:
         # Run all categories
         if category == "all":
-            return max((run_action(f) for c in get_categories() if (f := get_all_func(c))), default=0)
+            auth_func = get_all_func("authentication")
+            if auth_func:
+                logfire.info("Running authentication.all first to obtain credentials.")
+                # Run the authentication all_action. It will update cli.CONFIG globally.
+                run_action(auth_func)
+                if not CONFIG.auth_token:
+                    logfire.error("Authentication.all failed to set auth_token. Cannot proceed with other 'all' tests.")
+                    return 1
+
+            results = []
+            for c in get_categories():
+                if c == "authentication":
+                    continue # Already ran authentication.all
+                if f := get_all_func(c):
+                    results.append(run_action(f))
+            return max(results, default=0) if results else 0
 
         # Validate category
         if category not in get_categories():
