@@ -257,6 +257,7 @@ def main() -> int:
     from .registry import get_actions, get_all_func, get_categories, list_actions
 
     CONFIG, remaining = parse_global_args(sys.argv[1:])
+    logfire.debug(f"DEBUG: CONFIG.token after parsing: {CONFIG.token}")
 
     if not remaining:
         cats = get_categories()

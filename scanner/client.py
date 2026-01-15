@@ -24,6 +24,25 @@ class APIResponse:
     def __init__(self, response: httpx.Response):
         self._response = response
         self._json: dict[str, Any] = {}
+        # Try to parse JSON immediately to check for embedded errors
+        try:
+            self._json = self._response.json()
+            if "statusCode" in self._json and self._json["statusCode"] >= 400:
+                error_message = self._json.get("reason", self._json.get("error", "Unknown API Error"))
+                raise httpx.HTTPStatusError(
+                    message=f"API Error {self._json['statusCode']}: {error_message}",
+                    request=response.request,
+                    response=response
+                )
+        except httpx.DecodingError:
+            logfire.warn("Response body is not valid JSON, returning empty dict.")
+            self._json = {}
+        except httpx.HTTPStatusError: # Catching specifically my custom raised error
+            raise
+        except Exception as e:
+            logfire.error(f"Error parsing API response or checking for embedded status code: {e}")
+            self._json = {}
+
 
     @property
     def response(self) -> httpx.Response:
@@ -38,12 +57,7 @@ class APIResponse:
     @property
     def json(self) -> dict[str, Any]:
         """Parse response as JSON (cached)."""
-        if not self._json:
-            try:
-                self._json = self._response.json()
-            except httpx.DecodingError:
-                logfire.warn("Response body is not valid JSON, returning empty dict.")
-                self._json = {}
+        # JSON is already parsed in __init__
         return self._json
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -142,8 +156,11 @@ class WekanClient:
             "Accept": "application/json",
         }
 
+        print(f"DEBUG_CLIENT: Token in _create_client: {self.config.token}") # ADD THIS LINE
+
         if self.config.token:
-            headers["Authorization"] = f"Bearer {self.config.token}"
+            headers["Authorization"] = self.config.token
+            logfire.debug(f"DEBUG: Sending Authorization header: {headers['Authorization']}")
 
         return httpx.AsyncClient(
             base_url=self.config.base_url,
