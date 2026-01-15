@@ -1,7 +1,7 @@
 # scanner/api/checklists.py
 """Checklists API endpoints."""
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import logfire
 from pydantic import Field
@@ -49,6 +49,12 @@ class List(APIModel):
     id: str = Field(alias='_id')
     title: str
 
+class Swimlane(APIModel):
+    """Minimal Swimlane model for all_action."""
+    id: str = Field(alias='_id')
+    title: str
+    board_id: str = Field(alias='boardId')
+
 class Card(APIModel):
     """Minimal Card model for all_action."""
     id: str = Field(alias='_id')
@@ -66,7 +72,7 @@ async def get_all_checklists(client: 'WekanClient', *, card_id: str) -> list[Che
 
     :param card_id: The ID of the card.
     """
-    return (await client.get(f'api/cards/{card_id}/checklists')).as_list(Checklist)
+    return (await client.get(f'api/cards/{card_id}/checklists')).as_list(Checklist, 'checklists')
 
 @action()
 async def new_checklist(client: 'WekanClient', *, card_id: str, title: str) -> Checklist:
@@ -207,14 +213,14 @@ async def all(client: 'WekanClient') -> int:
         response = await client.post('api/boards', json=board_payload)
         logfire.info(f"DEBUG: Board creation response status: {response.status_code}")
         logfire.info(f"DEBUG: Board creation response text: {response.response.text}")
-        test_board = response.as_model(Board, 'board')
+        test_board = response.as_model(Board)
         # --- DEBUG END ---
         
         logfire.info(f'✓ Created test board: {test_board.id} - {test_board.title}')
 
         # 2. Get a default swimlane for the board
         logfire.info('Getting board swimlanes...')
-        swimlanes = (await client.get(f'api/boards/{test_board.id}/swimlanes')).as_list(APIModel) # APIModel for generic parsing
+        swimlanes = (await client.get(f'api/boards/{test_board.id}/swimlanes')).as_list(Swimlane, 'swimlanes') # Using Swimlane model with key
         default_swimlane_id = None
         if swimlanes:
             # Assuming the first swimlane is a default one
@@ -227,7 +233,7 @@ async def all(client: 'WekanClient') -> int:
         # 3. Create a List on the board
         logfire.info('Creating a test list...')
         list_payload = compact_dict(title='Test List for Checklists', boardId=test_board.id)
-        test_list = (await client.post(f'api/boards/{test_board.id}/lists', json=list_payload)).as_model(List, 'list')
+        test_list = (await client.post(f'api/boards/{test_board.id}/lists', json=list_payload)).as_model(List)
         logfire.info(f'✓ Created test list: {test_list.id} - {test_list.title}')
 
         # 4. Create a Card in the list
@@ -241,7 +247,7 @@ async def all(client: 'WekanClient') -> int:
             # For simplicity, will try without authorId first, if fails, might need to implement login
             # or fetch current user's ID. Assuming API handles default author for now or doesn't strictly require it on this endpoint.
         )
-        test_card = (await client.post(f'api/lists/{test_list.id}/cards', json=card_payload)).as_model(Card, 'card')
+        test_card = (await client.post(f'api/lists/{test_list.id}/cards', json=card_payload)).as_model(Card)
         logfire.info(f'✓ Created test card: {test_card.id} - {test_card.title}')
 
         # --- Checklist Tests ---

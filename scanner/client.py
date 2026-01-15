@@ -113,9 +113,11 @@ class WekanClientConfig(APIModel):
     base_url: str
     """Base URL of the wekan instance."""
 
-
-    token: str | None = None
+    auth_token: str | None = None
     """Authentication token for the API."""
+
+    user_id: str | None = None
+    """User ID associated with the authentication token."""
 
     timeout: float = 30.0
     verify_ssl: bool = True
@@ -156,11 +158,10 @@ class WekanClient:
             "Accept": "application/json",
         }
 
-        print(f"DEBUG_CLIENT: Token in _create_client: {self.config.token}") # ADD THIS LINE
-
-        if self.config.token:
-            headers["Authorization"] = self.config.token
-            logfire.debug(f"DEBUG: Sending Authorization header: {headers['Authorization']}")
+        if self.config.auth_token and self.config.user_id:
+            headers["X-Auth-Token"] = self.config.auth_token
+            headers["X-User-Id"] = self.config.user_id
+            logfire.debug(f"DEBUG: Sending X-Auth-Token and X-User-Id headers.")
 
         return httpx.AsyncClient(
             base_url=self.config.base_url,

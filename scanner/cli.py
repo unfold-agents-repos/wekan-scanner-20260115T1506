@@ -54,8 +54,11 @@ class GlobalConfig:
     verify_ssl: bool = True
     """Verify SSL certificates."""
 
-    token: str | None = None
+    auth_token: str | None = None
     """Authentication token for the API."""
+
+    user_id: str | None = None
+    """User ID associated with the authentication token."""
 
 
 # Singleton instance - set by parse_global_args()
@@ -80,8 +83,10 @@ def create_global_parser() -> "argparse.ArgumentParser":
                         help="Disable SSL certificate verification")
     parser.add_argument("--help", "-h", action="store_true",
                         help="Show this help message and exit")
-    parser.add_argument("--token", default=os.getenv("WEKAN_API_TOKEN"),
-                        help="API token for authentication (or set WEKAN_API_TOKEN env var)")
+    parser.add_argument("--auth-token", default=os.getenv("WEKAN_AUTH_TOKEN"),
+                        help="Auth token for authentication (or set WEKAN_AUTH_TOKEN env var)")
+    parser.add_argument("--user-id", default=os.getenv("WEKAN_USER_ID"),
+                        help="User ID for authentication (or set WEKAN_USER_ID env var)")
 
     return parser
 
@@ -143,7 +148,8 @@ def parse_global_args(argv: list[str]) -> tuple[GlobalConfig, list[str]]:
         url=args.url,
         verbose=args.verbose,
         verify_ssl=not args.no_verify_ssl,
-        token=args.token,
+        auth_token=args.auth_token,
+        user_id=args.user_id,
     ), remaining
 
 
@@ -164,7 +170,8 @@ async def get_client() -> WekanClient:
     config = WekanClientConfig(
         base_url=CONFIG.url,
         verify_ssl=CONFIG.verify_ssl,
-        token=CONFIG.token,
+        auth_token=CONFIG.auth_token,
+        user_id=CONFIG.user_id,
     )
 
     return WekanClient(config)
@@ -257,7 +264,7 @@ def main() -> int:
     from .registry import get_actions, get_all_func, get_categories, list_actions
 
     CONFIG, remaining = parse_global_args(sys.argv[1:])
-    logfire.debug(f"DEBUG: CONFIG.token after parsing: {CONFIG.token}")
+    logfire.debug(f"DEBUG: CONFIG.auth_token after parsing: {CONFIG.auth_token}")
 
     if not remaining:
         cats = get_categories()
