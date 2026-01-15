@@ -161,7 +161,7 @@ class WekanClient:
         if self.config.auth_token and self.config.user_id:
             headers["X-Auth-Token"] = self.config.auth_token
             headers["X-User-Id"] = self.config.user_id
-            logfire.debug(f"DEBUG: Sending X-Auth-Token and X-User-Id headers.")
+            logfire.debug("DEBUG: Sending X-Auth-Token and X-User-Id headers.")
 
         return httpx.AsyncClient(
             base_url=self.config.base_url,

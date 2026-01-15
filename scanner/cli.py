@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from functools import wraps
 from typing import TYPE_CHECKING, Callable
 
-import defopt
+import defopt # type: ignore
 import logfire
 
 from .client import WekanClient, WekanClientConfig
