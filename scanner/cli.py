@@ -109,7 +109,7 @@ def print_global_help(parser: "argparse.ArgumentParser"):
     else:
         print("\nCategories: none registered yet")
 
-    print(f"""
+    print("""
 Examples:
     wekan-scanner --url http://localhost:8080 boards list --limit 50
     wekan-scanner --url http://localhost:8080 boards all
@@ -260,7 +260,7 @@ def main() -> int:
 
     if not remaining:
         cats = get_categories()
-        print(f"Usage: wekan-scanner --url <URL> <category> <action> [args...]", file=sys.stderr)
+        print("Usage: wekan-scanner --url <URL> <category> <action> [args...]", file=sys.stderr)
         print(f"Categories: {', '.join(sorted(cats)) or 'none'}", file=sys.stderr)
         return 1
 
